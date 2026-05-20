@@ -43,31 +43,33 @@ export const requireAuth = async() => {
         session = await auth.api.getSession({
             headers: await headers()
         })
-
-        if (!session){
-            return redirect("/sign-in")
-        }
-
-        return session
     } catch (error) {
         console.error("Error fetching current session:", error);
         return null
     }
+
+    if (!session){
+        return redirect("/sign-in")
+    }
+
+    return session
 }
 
 export const requireUnAuth = async() => {
+    let session = null
+
     try {
-        const session = await auth.api.getSession({
+        session = await auth.api.getSession({
             headers: await headers()
         })
-
-        if (session){
-            return redirect("/")
-        }
-
-        return null
     } catch (error) {
         console.error("Error fetching current session:", error);
         return null
     }
+
+    if (session){
+        return redirect("/")
+    }
+
+    return null
 }
