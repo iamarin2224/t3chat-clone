@@ -16,7 +16,7 @@ import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
 // Define the shape of your User object
-interface UserData {
+export interface UserData {
   id: string;
   email: string;
   name: string | null;       

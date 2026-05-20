@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { UserData } from "../components/user-button"
 
 export const currentUser = async() => {
     try {
@@ -52,7 +53,7 @@ export const requireAuth = async() => {
         return redirect("/sign-in")
     }
 
-    return session
+    return session as NonNullable<typeof session> & { user: UserData };
 }
 
 export const requireUnAuth = async() => {
