@@ -10,12 +10,12 @@ const page = () => {
       {/* Heading */}
       <div className="flex flex-row items-center justify-center gap-x-2">
         <h1 className="text-3xl font-extrabold text-foreground">Welcome to</h1>
-        <Image src="/logo.svg" alt="Logo" width={142} height={142} />
+        <Image src="/logo2.svg" alt="Logo" width={142} height={22} priority className="w-[100px] h-auto" />
       </div>
 
       {/* Subtitle */}
       <p className="mt-2 text-center text-lg font-semibold text-muted-foreground">
-        Sign in below (we&apos;ll increase your message limits if you do 😉)
+        Sign in below
       </p>
 
       {/* Sign In Buttons Container */}
