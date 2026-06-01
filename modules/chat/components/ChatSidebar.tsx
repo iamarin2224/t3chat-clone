@@ -33,9 +33,9 @@ function ChatSidebar({user}:{user:UserData}) {
     <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
        
       {/* Header */}
-      <div className="flex h-12 items-center justify-between border-b border-sidebar-border px-4 py-3">
+      <div className="flex h-12 items-center justify-center border-b border-sidebar-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <Image src={"/logo2.svg"} alt="Logo" width={100} height={100} />
+          <Image src={"/logo2.svg"} alt="Logo" width={100} height={21} className="h-auto" loading="eager" />
         </div>
       </div>
 
