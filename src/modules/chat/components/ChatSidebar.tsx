@@ -66,7 +66,6 @@ function groupChatsByDate<T extends Chat | ChatWithMessages>(
   return groups;
 }
 
-// 1. Strictly define the keys here so TypeScript knows they match GroupedChats exactly
 const DATE_GROUPS: { key: keyof GroupedChats<any>; label: string }[] = [
   { key: "today", label: "Today" },
   { key: "yesterday", label: "Yesterday" },
@@ -179,7 +178,7 @@ function ChatSidebar({user, chats}: ChatSidebarProps) {
 
   const handleDelete = (e: React.MouseEvent, chatId: string) => {
     e.preventDefault();
-    // Your delete logic here
+    
   }
 
   return (
