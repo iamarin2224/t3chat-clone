@@ -174,7 +174,7 @@ function ChatSidebar({user, chats}: ChatSidebarProps) {
     )
   }, [chats, searchQuery])
 
-  const groupedChats = groupChatsByDate(filteredChats)
+  const groupedChats = useMemo(() => groupChatsByDate(filteredChats), [filteredChats]) 
 
   const handleDelete = (e: React.MouseEvent, chatId: string) => {
     e.preventDefault();
