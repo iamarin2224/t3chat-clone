@@ -1,6 +1,6 @@
 import React from 'react'
-import { requireAuth } from '../../../modules/authentication/actions'
-import ChatSidebar from '../../../modules/chat/components/ChatSidebar'
+import { requireAuth } from '../../modules/authentication/actions'
+import ChatSidebar from '../../modules/chat/components/ChatSidebar'
 import Header from '@/components/header'
 
 const layout = async({children}:{children:React.ReactNode}) => {
