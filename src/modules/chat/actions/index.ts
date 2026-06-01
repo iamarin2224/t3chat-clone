@@ -65,9 +65,9 @@ export async function getAllChats() {
             message: "Unauthorized"
         }
         
-        const chats = prisma.chat.findMany({
+        const chats = await prisma.chat.findMany({
             where: {userId: user?.id},
-            // include: {messages: true},
+            include: {messages: true},
             orderBy: {updatedAt: "desc"}
         })
 
@@ -95,7 +95,7 @@ export async function getChatById(chatId: string) {
             message: "Unauthorized"
         }
         
-        const chat = prisma.chat.findUnique({
+        const chat = await prisma.chat.findUnique({
             where: {id: chatId, userId: user?.id},
             include: {messages: true},
         })
@@ -124,7 +124,7 @@ export async function deleteChat(chatId: string) {
             message: "Unauthorized"
         }
         
-        const chat = prisma.chat.delete({
+        const chat = await prisma.chat.delete({
             where: {id: chatId, userId: user?.id}
         })
 
