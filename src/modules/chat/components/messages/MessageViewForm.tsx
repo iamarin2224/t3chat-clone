@@ -22,14 +22,14 @@ import { Conversation, ConversationContent, ConversationScrollButton } from '@/c
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 
-interface TextPart {
+export interface TextPart {
   type: "text";
   text: string;
 }
 
-type MessagePart = TextPart | { type: string; [key: string]: any };
+export type MessagePart = TextPart | { type: string; [key: string]: any };
 
-interface ParsedUIMessage {
+export interface ParsedUIMessage {
   id: string;
   role: "user" | "assistant";
   parts: MessagePart[];
