@@ -5,6 +5,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react';
 import { ModelSelector } from './ModelSelector';
+import { useCreateChat } from '../../hooks/useChats';
+import { toast } from 'sonner';
 
 interface ChatMessageFormProps {
   initialMessage?: string | null;
@@ -24,7 +26,20 @@ const ChatMessageForm = ({initialMessage, onMessageChange}:ChatMessageFormProps)
         }
     }, [initialMessage, onMessageChange]);
 
-    const handleSubmit = async(e: any) => {}
+    const {mutateAsync, isPending: isChatPending} = useCreateChat()
+
+    const handleSubmit = async(e: any) => {
+        try {
+            e.preventDefault()
+            await mutateAsync({content: message, model: selectedModel})
+        } catch (error) {
+            console.error("Erro sending message: ", error);
+            toast.error("Failed to send message")
+        }
+        finally{
+            setMessage("")
+        }
+    }
 
     return (
         <div className="w-full max-w-3xl mx-auto px-4 pb-6">
@@ -62,7 +77,7 @@ const ChatMessageForm = ({initialMessage, onMessageChange}:ChatMessageFormProps)
                 )}
                 </div>
 
-                {/* <Button
+                <Button
                     type="submit"
                     disabled={!message.trim() || isChatPending}
                     size="sm"
@@ -79,18 +94,6 @@ const ChatMessageForm = ({initialMessage, onMessageChange}:ChatMessageFormProps)
                     <span className="sr-only">Send message</span>
                     </>
                 )}
-                </Button> */}
-                <Button
-                    type="submit"
-                    disabled={!message.trim()}
-                    size="sm"
-                    variant={message.trim() ? "default" : "ghost"}
-                    className="h-8 w-8 p-0 rounded-full "
-                >
-                    <>
-                    <Send className="h-4 w-4" />
-                    <span className="sr-only">Send message</span>
-                    </>
                 </Button>
             </div>
             </div>
