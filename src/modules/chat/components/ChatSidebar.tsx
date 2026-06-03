@@ -21,8 +21,12 @@ import {
 } from "lucide-react";
 import { isToday, isYesterday, isWithinInterval, subDays } from "date-fns";
 import UserButton, { UserData } from "../../authentication/components/user-button";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Prisma, Chat } from "@/generated/prisma/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteChat } from "../actions";
+import { toast } from "sonner";
+import { useGetAllChats } from "../hooks/useChats";
 
 export type ChatWithMessages = Prisma.ChatGetPayload<{
   include: { messages: true }
@@ -163,22 +167,47 @@ function ChatSidebar({user, chats}: ChatSidebarProps) {
   const pathname = usePathname()
   const activeChatId = pathname.startsWith("/chat/") ? pathname.split("/")[2] : undefined
   const [searchQuery, setSearchQuery] = useState("")
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const { data: response } = useGetAllChats();
+  const allChats = response?.data || chats;
 
   const filteredChats = useMemo(() => {
-    if (!searchQuery) return chats
+    if (!searchQuery) return allChats
 
     const query = searchQuery.toLowerCase()
-    return chats.filter((chat) => 
+    return allChats.filter((chat) => 
       chat.title?.toLowerCase().includes(query) ||
       chat.messages?.some((msg) => msg.content?.toLowerCase().includes(query))
     )
-  }, [chats, searchQuery])
+  }, [allChats, searchQuery])
 
   const groupedChats = useMemo(() => groupChatsByDate(filteredChats), [filteredChats]) 
 
+  const deleteChatMutation = useMutation({
+    mutationFn: deleteChat,
+    onSuccess: (res, deletedId) => {
+      if (res.success) {
+        queryClient.invalidateQueries({ queryKey: ["chats"] });
+        toast.success("Chat deleted successfully");
+        if (activeChatId === deletedId) {
+          router.push("/");
+        }
+      } else {
+        toast.error(res.message || (res as any).messsage || "Failed to delete chat");
+      }
+    },
+    onError: (err) => {
+      console.error("Delete chat error: ", err);
+      toast.error("Failed to delete chat");
+    }
+  });
+
   const handleDelete = (e: React.MouseEvent, chatId: string) => {
     e.preventDefault();
-    
+    e.stopPropagation();
+    deleteChatMutation.mutate(chatId);
   }
 
   return (

@@ -106,25 +106,57 @@ function MessagePart({part, partIndex, role}:MessagePartProps) {
 }
 
 const MessageViewForm = ({ chatId }: { chatId: string }) => {
-    const router = useRouter()
+    const { data, isPending } = useGetChatById(chatId)
 
+    if (isPending) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <Spinner />
+            </div>
+        );
+    }
+
+    if (!data?.success || !data?.data) {
+        return (
+            <div className="flex items-center justify-center h-full text-red-500">
+                Chat not found.
+            </div>
+        );
+    }
+
+    return (
+        <MessageViewInnerForm
+            chatId={chatId}
+            initialMessages={data.data.messages}
+            defaultModel={data.data.model}
+        />
+    )
+}
+
+const MessageViewInnerForm = ({
+    chatId,
+    initialMessages,
+    defaultModel
+}: {
+    chatId: string;
+    initialMessages: PrismaMessage[];
+    defaultModel?: string | null;
+}) => {
+    const router = useRouter()
     const searchParams = useSearchParams()
     const shouldAutoTrigger = searchParams.get("autoTrigger") === "true"
     const hasAutoTrigger = useRef(false)
 
-    const [selectedModel, setSelectedModel] = useState("");
+    const [selectedModel, setSelectedModel] = useState(defaultModel || "");
     const [input, setInput] = useState("");
 
     const { data: models = [], isPending: isModelPending } = useAIModels();
-    const { data, isPending } = useGetChatById(chatId)
 
     const initialMessage = useMemo(() => {
-        if (!data?.data?.messages) return []
-        
-        return data?.data?.messages.
-        filter((msg) => msg.content?.trim() && msg.id).
-        map(parseMessageToUI)
-    }, [data])
+        return initialMessages
+            .filter((msg) => msg.content?.trim() && msg.id)
+            .map(parseMessageToUI)
+    }, [initialMessages])
     
     const transport = useMemo(() => new DefaultChatTransport({
         api:"/api/chat"
@@ -174,13 +206,14 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
         initialMessage,
         regenerate,
         router,
+        searchParams,
     ]);
 
     useEffect(() => {
-        if (data?.data?.model && !selectedModel){
-            setSelectedModel(data?.data?.model)
+        if (defaultModel && !selectedModel){
+            setSelectedModel(defaultModel)
         }
-    }, [data, selectedModel])
+    }, [defaultModel, selectedModel])
 
     const handleSubmit = async (message:PromptInputMessage) => {
         const text = message.text?.trim() || input.trim()
@@ -203,11 +236,13 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
                 }
             )
         } catch (error) {
-            
+            console.error("Error sending message: ", error);
+            toast.error("Failed to send message");
         } finally {
             setInput("")
         }
     }
+
     const handleRetry = () => {
         if (!selectedModel || isBusy) return;
         
@@ -228,14 +263,6 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
     const initialIds = new Set(initialMessage.map(m => m.id));
     const uniqueLiveMessages = messages.filter(m => !initialIds.has(m.id));
     const messageToRender = [...initialMessage, ...uniqueLiveMessages];
-
-    if (isPending) {
-        return (
-        <div className="flex items-center justify-center h-full">
-            <Spinner />
-        </div>
-        );
-    }
 
     return (
         <div className="max-w-4xl mx-auto p-6 relative size-full h-[calc(100vh-4rem)]">
@@ -272,7 +299,6 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
                 </ConversationContent>
                 <ConversationScrollButton />
                 </Conversation>
-
 
                 {/* Input */}
                 <PromptInput onSubmit={handleSubmit} className={"mt-4"}>
@@ -317,8 +343,6 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
                         <PromptInputSubmit status="ready" />
                     </PromptInputFooter>
                 </PromptInput>
-
-
             </div>
         </div>
     )
