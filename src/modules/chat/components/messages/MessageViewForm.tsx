@@ -6,12 +6,15 @@ import { useAIModels } from '../../hooks/useAIModels'
 import { useGetChatById } from '../../hooks/useChats'
 import { Spinner } from '@/components/ui/spinner'
 import { Message as PrismaMessage } from '@/generated/prisma/client'
+import { useChat }  from "@ai-sdk/react"
+import { DefaultChatTransport, type UIMessage } from 'ai'
 
 import {
   PromptInput,
   PromptInputBody,
   PromptInputButton,
   PromptInputFooter,
+  PromptInputMessage,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
@@ -21,6 +24,7 @@ import { RotateCcwIcon, StopCircleIcon } from 'lucide-react'
 import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ai-elements/conversation'
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
+import { toast } from 'sonner'
 
 export interface TextPart {
   type: "text";
@@ -31,7 +35,7 @@ export type MessagePart = TextPart | { type: string; [key: string]: any };
 
 export interface ParsedUIMessage {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   parts: MessagePart[];
   createdAt: Date;
 }
@@ -39,7 +43,7 @@ export interface ParsedUIMessage {
 function parseMessageToUI(msg: PrismaMessage): ParsedUIMessage {
   const basePart: TextPart = { type: "text", text: msg.content };
 
-  const role = msg.messageRole.toLowerCase() as "user" | "assistant";
+  const role = msg.messageRole.toLowerCase() as "user" | "assistant" | "system";
 
   try {
     const parts = JSON.parse(msg.content);
@@ -63,7 +67,7 @@ function parseMessageToUI(msg: PrismaMessage): ParsedUIMessage {
 interface MessagePartProps {
   part: MessagePart;
   partIndex: number;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
 }
 
 function MessagePart({part, partIndex, role}:MessagePartProps) {
@@ -84,7 +88,7 @@ function MessagePart({part, partIndex, role}:MessagePartProps) {
             >
                 <ReasoningTrigger />
                 <ReasoningContent className="mt-2 italic font-light text-muted-foreground">
-                {part.text}
+                {part.text ?? ""}
                 </ReasoningContent>
             </Reasoning>
         );
@@ -116,11 +120,61 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
 
     const initialMessage = useMemo(() => {
         if (!data?.data?.messages) return []
-
+        
         return data?.data?.messages.
-                filter((msg) => msg.content?.trim() && msg.id).
-                map(parseMessageToUI)
+        filter((msg) => msg.content?.trim() && msg.id).
+        map(parseMessageToUI)
     }, [data])
+    
+    const transport = useMemo(() => new DefaultChatTransport({
+        api:"/api/chat"
+    }), [])
+
+    const {messages, status, sendMessage, regenerate, stop, error} = useChat({
+        id:chatId,
+        messages:initialMessage as any,
+        transport,
+        onError:(err) => {
+            console.log("Error in chat: ", err);
+            toast.error(err.message)
+        }
+    })
+
+    const isBusy = status === "streaming" || status === "submitted"
+
+    useEffect(() => {
+        if (hasAutoTrigger.current) return;
+        if (!shouldAutoTrigger) return;
+        if (!selectedModel) return;
+        if (initialMessage.length === 0) return;
+        const lastMessage = initialMessage[initialMessage.length - 1];
+        if (lastMessage.role !== "user") return;
+
+        hasAutoTrigger.current = true;
+        
+        regenerate({
+            body: {
+                chatId,
+                model:selectedModel,
+                skipUserMessage:true
+            }
+        }).catch((err) => {
+            console.log("Auto trigger failed: ", err);
+            toast.error(err.message)
+        })
+
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("autoTrigger")
+        const query = params.toString()
+        router.replace(`/chat/${chatId}${query ? `?${query}` : "" }`, { scroll: false });
+    }, [
+        shouldAutoTrigger,
+        selectedModel,
+        chatId,
+        initialMessage,
+        regenerate,
+        router,
+    ]);
 
     useEffect(() => {
         if (data?.data?.model && !selectedModel){
@@ -128,12 +182,52 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
         }
     }, [data, selectedModel])
 
-    const handleSubmit = () => {}
-    const handleRetry = () => {}
+    const handleSubmit = async (message:PromptInputMessage) => {
+        const text = message.text?.trim() || input.trim()
+        if (!text) return
+        if (!selectedModel) {
+            toast.error("Please select a model")
+            return
+        }
+        if (isBusy) return
 
-    const isStreaming = false
+        try {
+            await sendMessage(
+                {text},
+                {
+                    body: {
+                        chatId,
+                        model:selectedModel,
+                        skipUserMessage:false
+                    }
+                }
+            )
+        } catch (error) {
+            
+        } finally {
+            setInput("")
+        }
+    }
+    const handleRetry = () => {
+        if (!selectedModel || isBusy) return;
+        
+        regenerate({
+            body: {
+                chatId,
+                model: selectedModel,
+                skipUserMessage: true // Don't duplicate the user message block
+            }
+        }).catch((err) => {
+            console.error("Retry failed: ", err);
+            toast.error(err.message);
+        });
+    };
 
-    const messageToRender = [...initialMessage]
+    const isStreaming = status === "streaming"
+
+    const initialIds = new Set(initialMessage.map(m => m.id));
+    const uniqueLiveMessages = messages.filter(m => !initialIds.has(m.id));
+    const messageToRender = [...initialMessage, ...uniqueLiveMessages];
 
     if (isPending) {
         return (
@@ -141,7 +235,7 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
             <Spinner />
         </div>
         );
-    } 
+    }
 
     return (
         <div className="max-w-4xl mx-auto p-6 relative size-full h-[calc(100vh-4rem)]">
@@ -186,8 +280,8 @@ const MessageViewForm = ({ chatId }: { chatId: string }) => {
                         <PromptInputTextarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Type your message..."
-                            disabled={false}
+                            placeholder={!isBusy ? "Type your message..." : "AI is typing"}
+                            disabled={isBusy}
                         />
                     </PromptInputBody>
 
