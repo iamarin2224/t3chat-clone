@@ -2,7 +2,7 @@
 
 import {prisma} from "@/lib/db"; 
 import { currentUser } from "../../authentication/actions";
-import { MessageRole, MessageType } from "./enums";
+import { MessageRole, MessageType } from "@/generated/prisma/enums";
 import { revalidatePath } from "next/cache";
 
 interface createChatWithMessageProps {

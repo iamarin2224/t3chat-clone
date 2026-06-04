@@ -3,6 +3,8 @@ import { requireAuth } from '../../modules/authentication/actions'
 import ChatLayout from '@/components/chat-layout'
 import { getAllChats } from '@/modules/chat/actions'
 
+export const dynamic = "force-dynamic";
+
 const layout = async({children}:{children:React.ReactNode}) => {
     const session = await requireAuth()
 
