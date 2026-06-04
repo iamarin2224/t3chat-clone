@@ -65,7 +65,7 @@ function Calendar({
           defaultClassNames.button_next
         ),
         month_caption: cn(
-          "flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)",
+          "relative flex h-(--cell-size) w-full items-center justify-center text-sm font-medium",
           defaultClassNames.month_caption
         ),
         dropdowns: cn(
@@ -132,7 +132,7 @@ function Calendar({
         ),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
-      }}
+      } as any}
       components={{
         Root: ({ className, rootRef, ...props }) => {
           return (
