@@ -21,7 +21,7 @@ const ChatMessageView = ({user}:{user:UserData}) => {
 
 
   return (
-    <div className="relative flex flex-col h-screen w-full pt-10 pb-6">
+    <div className="max-w-4xl mx-auto p-6 relative size-full h-[calc(100vh-4rem)] flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             <ChatWelcomeTabs
                 username={user?.name}
@@ -29,12 +29,10 @@ const ChatMessageView = ({user}:{user:UserData}) => {
             />
         </div>
 
-        <div className="w-full shrink-0">
-            <ChatMessageForm
-                initialMessage={selectedMessage}
-                onMessageChange={handleMessageChange}
-            />
-        </div>
+        <ChatMessageForm
+            initialMessage={selectedMessage}
+            onMessageChange={handleMessageChange}
+        />
     </div>
   )
 }
