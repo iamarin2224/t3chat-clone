@@ -28,6 +28,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteChat } from "../actions";
 import { toast } from "sonner";
 import { useGetAllChats } from "../hooks/useChats";
+import Modal from "@/components/ui/modal";
 
 export type ChatWithMessages = Prisma.ChatGetPayload<{
   include: { messages: true }
@@ -187,12 +188,15 @@ function ChatSidebar({user, chats, onClose}: ChatSidebarProps) {
 
   const groupedChats = useMemo(() => groupChatsByDate(filteredChats), [filteredChats]) 
 
+  const [chatIdToDelete, setChatIdToDelete] = useState<string | null>(null);
+
   const deleteChatMutation = useMutation({
     mutationFn: deleteChat,
     onSuccess: (res, deletedId) => {
       if (res.success) {
         queryClient.invalidateQueries({ queryKey: ["chats"] });
         toast.success("Chat deleted successfully");
+        setChatIdToDelete(null);
         if (activeChatId === deletedId) {
           router.push("/");
         }
@@ -209,7 +213,7 @@ function ChatSidebar({user, chats, onClose}: ChatSidebarProps) {
   const handleDelete = (e: React.MouseEvent, chatId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    deleteChatMutation.mutate(chatId);
+    setChatIdToDelete(chatId);
   }
 
   return (
@@ -292,6 +296,22 @@ function ChatSidebar({user, chats, onClose}: ChatSidebarProps) {
           {user.name}
         </span>
       </div>
+
+      <Modal
+        isOpen={chatIdToDelete !== null}
+        onClose={() => setChatIdToDelete(null)}
+        onSubmit={() => {
+          if (chatIdToDelete) {
+            deleteChatMutation.mutate(chatIdToDelete);
+          }
+        }}
+        title="Delete Chat"
+        description="Are you sure you want to delete this chat? This action cannot be undone."
+        submitText={deleteChatMutation.isPending ? "Deleting..." : "Delete"}
+        cancelText="Cancel"
+        submitVariant="destructive"
+        disabled={deleteChatMutation.isPending}
+      />
 
     </div>
   );
