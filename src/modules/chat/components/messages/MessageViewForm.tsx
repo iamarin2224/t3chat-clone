@@ -174,7 +174,7 @@ function AssistantActionBar({ message, isLast, onRetry, models, currentSelectedM
     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2 pl-4 py-1 select-none font-sans">
       <CopyButton text={messageText} />
       <span className="text-muted-foreground/30">|</span>
-      <span className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono truncate max-w-[200px]" title={activeModelId || "Random"}>
+      <span className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono truncate max-w-50" title={activeModelId || "Random"}>
         {modelName.replace(/\s*\(free\)$/i, '')}
       </span>
       
