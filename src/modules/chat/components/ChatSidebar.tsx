@@ -18,6 +18,7 @@ import {
   SearchIcon,
   EllipsisIcon,
   Trash,
+  PanelLeftClose,
 } from "lucide-react";
 import { isToday, isYesterday, isWithinInterval, subDays } from "date-fns";
 import UserButton, { UserData } from "../../authentication/components/user-button";
@@ -160,10 +161,11 @@ function ChatGroup<T extends Chat | ChatWithMessages>({
 
 interface ChatSidebarProps {
   user: UserData,
-  chats: ChatWithMessages[]
+  chats: ChatWithMessages[],
+  onClose?: () => void
 }
 
-function ChatSidebar({user, chats}: ChatSidebarProps) {
+function ChatSidebar({user, chats, onClose}: ChatSidebarProps) {
   const pathname = usePathname()
   const activeChatId = pathname.startsWith("/chat/") ? pathname.split("/")[2] : undefined
   const [searchQuery, setSearchQuery] = useState("")
@@ -214,10 +216,21 @@ function ChatSidebar({user, chats}: ChatSidebarProps) {
     <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
        
       {/* Header */}
-      <div className="flex h-12 items-center justify-center border-b border-sidebar-border px-4 py-3">
+      <div className="flex h-12 items-center justify-between border-b border-sidebar-border px-4 py-3">
         <div className="flex items-center gap-2">
           <Image src={"/logo2.svg"} alt="Logo" width={100} height={21} className="h-auto" loading="eager" />
         </div>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-8 w-8 hover:bg-sidebar-accent-foreground/10 text-sidebar-foreground"
+          >
+            <PanelLeftClose className="h-5 w-5" />
+            <span className="sr-only">Close Sidebar</span>
+          </Button>
+        )}
       </div>
 
       {/* New Chat Button */}
