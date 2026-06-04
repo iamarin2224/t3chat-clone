@@ -146,3 +146,41 @@ export async function deleteChat(chatId: string) {
         }
     }
 }
+
+export async function deleteLastAssistantMessage(chatId: string) {
+    try {
+        const user = await currentUser()
+
+        if (!user) return {
+            success: false, 
+            message: "Unauthorized"
+        }
+
+        // Find the last message in this chat
+        const lastMessage = await prisma.message.findFirst({
+            where: { chatId },
+            orderBy: { createdAt: "desc" }
+        })
+
+        if (lastMessage && lastMessage.messageRole === MessageRole.ASSISTANT) {
+            await prisma.message.delete({
+                where: { id: lastMessage.id }
+            })
+            return {
+                success: true,
+                message: "Last assistant message deleted successfully"
+            }
+        }
+
+        return {
+            success: false,
+            message: "No assistant message found to delete"
+        }
+    } catch (error) {
+        console.error("Error deleting last assistant message: ", error);
+        return {
+            success: false,
+            message: "Failed to delete last assistant message"
+        }
+    }
+}
