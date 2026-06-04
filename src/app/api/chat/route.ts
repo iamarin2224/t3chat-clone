@@ -67,21 +67,19 @@ export async function POST(req:NextRequest) {
         let modelMessages = await convertToModelMessages(allMessages)
         
         //obtain the result
-        //obtain the result
         const result = streamText({
-            model: provider.chat(model),
+            model:provider.chat(model),
             maxRetries: 1,
-            system: CHAT_SYSTEM_PROMPT,
-            messages: modelMessages
-        });
+            system:CHAT_SYSTEM_PROMPT,
+            messages:modelMessages
+        })
 
-        const streamResponse = result.toUIMessageStreamResponse({
+        return result.toUIMessageStreamResponse({
             sendReasoning:true,
             originalMessages:allMessages,
             //Save the messages to db
             onFinish:async({responseMessage})=>{
                 try {
-                    const resolvedModel = (await result.response).modelId || model;
                     const msgToSave = []
 
                     if (!skipUserMessage){
@@ -93,7 +91,7 @@ export async function POST(req:NextRequest) {
                                 chatId,
                                 content: partsToJSON(lastUserMsg),
                                 messageRole: MessageRole.USER,
-                                model: resolvedModel,
+                                model,
                                 messageType: MessageType.NORMAL,
                             });
                         }
@@ -105,7 +103,7 @@ export async function POST(req:NextRequest) {
                         chatId,
                         content: partsToJSON(responseMessage),
                         messageRole: MessageRole.ASSISTANT,
-                        model: resolvedModel,
+                        model,
                         messageType: MessageType.NORMAL,
                         });
                     }
@@ -117,9 +115,7 @@ export async function POST(req:NextRequest) {
                     console.error("Error saving messages:", error);
                 }
             }
-        });
-
-        return streamResponse;
+        })
 
     } catch (error) {
         console.error("API Route Error:", error);
