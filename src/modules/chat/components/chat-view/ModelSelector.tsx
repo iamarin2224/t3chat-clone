@@ -75,6 +75,9 @@ export function ModelSelector({
     );
   });
 
+  const randomModel = filteredModels.find((m) => m.id === "openrouter/free");
+  const otherModels = filteredModels.filter((m) => m.id !== "openrouter/free");
+
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
@@ -112,24 +115,14 @@ export function ModelSelector({
           </div>
           <ScrollArea className="h-100">
             <div className="p-2">
-              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                Available Models ({filteredModels.length})
-              </div>
-            </div>
-            {filteredModels.length === 0 ? (
-              <div className="px-2 py-8 text-center text-sm text-muted-foreground">
-                No models found matching "{searchQuery}"
-              </div>
-            ) : (
-              filteredModels.map((model) => (
+              {randomModel && (
                 <div
-                  key={model.id}
                   className={cn(
                     "relative flex cursor-pointer select-none items-start gap-2 rounded-md px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
-                    selectedModelId === model.id && "bg-accent"
+                    selectedModelId === randomModel.id && "bg-accent"
                   )}
                   onClick={() => {
-                    onModelSelect(model.id);
+                    onModelSelect(randomModel.id);
                     setOpen(false);
                     setSearchQuery("");
                   }}
@@ -138,31 +131,31 @@ export function ModelSelector({
                     <Check
                       className={cn(
                         "h-4 w-4",
-                        selectedModelId === model.id ? "opacity-100" : "opacity-0"
+                        selectedModelId === randomModel.id ? "opacity-100" : "opacity-0"
                       )}
                     />
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm leading-none truncate">
-                        {model.name.replace(/\s*\(free\)$/i, '')}
+                        {randomModel.name}
                       </span>
-                      {isFreeModel(model) && (
+                      {isFreeModel(randomModel) && (
                         <Badge variant="secondary" className="h-4 px-1 text-[10px]">
                           FREE
                         </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-1">
-                      {model.description}
+                      {randomModel.description}
                     </p>
                     <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                       <span>
-                        Context: {formatContextLength(model.context_length)}
+                        Context: {formatContextLength(randomModel.context_length)}
                       </span>
                       <span>•</span>
                       <span className="capitalize">
-                        {model.architecture?.modality?.replace("->", " → ") || "N/A"}
+                        {randomModel.architecture?.modality?.replace("->", " → ") || "N/A"}
                       </span>
                     </div>
                   </div>
@@ -170,14 +163,88 @@ export function ModelSelector({
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 shrink-0"
-                    onClick={(e) => openModelDetails(model, e)}
+                    onClick={(e) => openModelDetails(randomModel, e)}
                   >
                     <Info className="h-3.5 w-3.5" />
                     <span className="sr-only">View details</span>
                   </Button>
                 </div>
-              ))
-            )}
+              )}
+
+              {randomModel && otherModels.length > 0 && (
+                <Separator className="my-2" />
+              )}
+
+              {otherModels.length > 0 && (
+                <>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Available Models ({otherModels.length})
+                  </div>
+                  {otherModels.map((model) => (
+                    <div
+                      key={model.id}
+                      className={cn(
+                        "relative flex cursor-pointer select-none items-start gap-2 rounded-md px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
+                        selectedModelId === model.id && "bg-accent"
+                      )}
+                      onClick={() => {
+                        onModelSelect(model.id);
+                        setOpen(false);
+                        setSearchQuery("");
+                      }}
+                    >
+                      <div className="flex h-5 items-center">
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            selectedModelId === model.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm leading-none truncate">
+                            {model.name.replace(/\s*\(free\)$/i, '')}
+                          </span>
+                          {isFreeModel(model) && (
+                            <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                              FREE
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {model.description}
+                        </p>
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <span>
+                            Context: {formatContextLength(model.context_length)}
+                          </span>
+                          <span>•</span>
+                          <span className="capitalize">
+                            {model.architecture?.modality?.replace("->", " → ") || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 shrink-0"
+                        onClick={(e) => openModelDetails(model, e)}
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                        <span className="sr-only">View details</span>
+                      </Button>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {filteredModels.length === 0 && (
+                <div className="px-2 py-8 text-center text-sm text-muted-foreground">
+                  No models found matching "{searchQuery}"
+                </div>
+              )}
+            </div>
           </ScrollArea>
         </PopoverContent>
       </Popover>

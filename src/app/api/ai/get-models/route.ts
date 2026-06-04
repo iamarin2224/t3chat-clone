@@ -23,7 +23,7 @@ export interface OpenRouterModel {
   [key: string]: any; 
 }
 
-export async function GET(request:NextResponse) {
+export async function GET() {
     try {
         const response = await axios.get('https://openrouter.ai/api/v1/models', {
             headers: {
@@ -38,22 +38,45 @@ export async function GET(request:NextResponse) {
             const promptPrice = parseFloat(model.pricing?.prompt || '0');
             const completionPrice = parseFloat(model.pricing?.completion || '0');
 
-            return promptPrice === 0 && completionPrice === 0;
+            // return promptPrice === 0 && completionPrice === 0;
             
-            // const isFree = promptPrice === 0 && completionPrice === 0;
-            // const hasNoAudio = !model.architecture?.output_modalities?.includes('audio');
-            // return isFree && hasNoAudio
+            const isFree = promptPrice === 0 && completionPrice === 0;
+            const hasNoAudio = !model.architecture?.output_modalities?.includes('audio');
+            return isFree && hasNoAudio
         });
 
-        const formattedModels = freeTextModels.map((model: OpenRouterModel) => ({
-            id: model.id,
-            name: model.name,
-            description: model.description,
-            context_length: model.context_length,
-            architecture: model.architecture,
-            pricing: model.pricing,
-            top_provider: model.top_provider,
-        }));
+        let formattedModels = freeTextModels.map((model: OpenRouterModel) => {
+            const isFreeAuto = model.id === "openrouter/free";
+            return {
+                id: model.id,
+                name: isFreeAuto ? "Random" : model.name,
+                description: isFreeAuto
+                    ? "The Random Model (leveraged via openrouter/free endpoint) automatically selects a free model at random from the available free models on OpenRouter. The router intelligently filters for models that support the features your request needs, such as image understanding, tool calling, and structured outputs."
+                    : model.description,
+                context_length: model.context_length,
+                architecture: model.architecture,
+                pricing: model.pricing,
+                top_provider: model.top_provider,
+            };
+        });
+
+        // Pull "openrouter/free" to the top of the list
+        const freeAutoIdx = formattedModels.findIndex((m: any) => m.id === "openrouter/free");
+        if (freeAutoIdx > -1) {
+            const [freeAutoModel] = formattedModels.splice(freeAutoIdx, 1);
+            formattedModels.unshift(freeAutoModel);
+        } else {
+            // Fallback prepend if not returned by the API
+            formattedModels.unshift({
+                id: "openrouter/free",
+                name: "Random",
+                description: "The Random Model (leveraged via openrouter/free endpoint) automatically selects a free model at random from the available free models on OpenRouter. The router intelligently filters for models that support the features your request needs, such as image understanding, tool calling, and structured outputs.",
+                context_length: 4096,
+                architecture: { input_modalities: ["text"], output_modalities: ["text"] },
+                pricing: { prompt: "0.0", completion: "0.0" },
+                top_provider: { context_length: 4096 }
+            });
+        }
 
         return NextResponse.json({
             models: formattedModels,
