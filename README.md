@@ -2,6 +2,8 @@
 
 A feature-rich, high-performance clone of [t3.chat](https://t3.chat) built using Next.js (App Router), Prisma, PostgreSQL, Better-Auth, and the Vercel AI SDK. It leverages OpenRouter to offer real-time streaming with support for advanced AI reasoning models.
 
+Visit the live site at [t3.chat-clone](https://t3chat-clone-ashen.vercel.app).
+
 ---
 
 ## Overview
